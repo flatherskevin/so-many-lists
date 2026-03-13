@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4B66FDC32F64215B00D4D2E2 /* Untitled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B66FDC22F64215700D4D2E2 /* Untitled.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4BAD9B2A2F62D7BC0008EAC9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -25,6 +29,7 @@
 
 /* Begin PBXFileReference section */
 		4B66FD452F62D8A400D4D2E2 /* So Many Lists.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "So Many Lists.xcodeproj"; sourceTree = "<group>"; };
+		4B66FDC22F64215700D4D2E2 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
 		4BAD9B1A2F62D7BA0008EAC9 /* So Many Lists.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "So Many Lists.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BAD9B292F62D7BC0008EAC9 /* So Many ListsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "So Many ListsTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BAD9B332F62D7BC0008EAC9 /* So Many ListsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "So Many ListsUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -87,6 +92,7 @@
 				4BAD9B2C2F62D7BC0008EAC9 /* So Many Lists/So Many ListsTests */,
 				4BAD9B362F62D7BC0008EAC9 /* So Many Lists/So Many ListsUITests */,
 				4BAD9B1B2F62D7BA0008EAC9 /* Products */,
+				4B66FDC22F64215700D4D2E2 /* Untitled.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -250,6 +256,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B66FDC32F64215B00D4D2E2 /* Untitled.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
