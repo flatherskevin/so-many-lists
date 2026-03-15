@@ -95,6 +95,14 @@ struct SectionDraft: Identifiable, Codable, Hashable {
     var entries: [EntryDraft]
 }
 
+struct StaticListSet: Identifiable, Codable, Hashable {
+    var id: String
+    var title: String
+    var subtitle: String
+    var kind: ListKind
+    var sections: [SectionDraft]
+}
+
 struct GeneratedListDraft: Identifiable, Codable, Hashable {
     var id: UUID = UUID()
     var title: String
@@ -110,6 +118,8 @@ struct ListGenerationRequest: Codable, Hashable {
     var kind: ListKind
     var voiceTranscript: String
     var attachments: [MediaAttachment]
+    var starterSets: [StaticListSet] = []
+    var existingEntries: [String] = []
 }
 
 struct SharedListPayload: Codable, Hashable {
@@ -244,6 +254,104 @@ final class ListEntry {
     }
 }
 
+@Model
+final class StarterSetDocument {
+    @Attribute(.unique) var id: UUID
+    var title: String
+    var subtitle: String
+    var kindRawValue: String
+    var createdAt: Date
+    var updatedAt: Date
+    @Relationship(deleteRule: .cascade, inverse: \StarterSetSectionModel.starterSet)
+    var sections: [StarterSetSectionModel]
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        subtitle: String = "",
+        kind: ListKind,
+        createdAt: Date = .now,
+        updatedAt: Date = .now,
+        sections: [StarterSetSectionModel] = []
+    ) {
+        self.id = id
+        self.title = title
+        self.subtitle = subtitle
+        self.kindRawValue = kind.rawValue
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.sections = sections
+    }
+
+    var kind: ListKind {
+        get { ListKind(rawValue: kindRawValue) ?? .general }
+        set { kindRawValue = newValue.rawValue }
+    }
+
+    func touch() {
+        updatedAt = .now
+    }
+}
+
+@Model
+final class StarterSetSectionModel {
+    @Attribute(.unique) var id: UUID
+    var title: String
+    var sortOrder: Int
+    var starterSet: StarterSetDocument?
+    @Relationship(deleteRule: .cascade, inverse: \StarterSetEntryModel.section)
+    var entries: [StarterSetEntryModel]
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        sortOrder: Int,
+        starterSet: StarterSetDocument? = nil,
+        entries: [StarterSetEntryModel] = []
+    ) {
+        self.id = id
+        self.title = title
+        self.sortOrder = sortOrder
+        self.starterSet = starterSet
+        self.entries = entries
+    }
+}
+
+@Model
+final class StarterSetEntryModel {
+    @Attribute(.unique) var id: UUID
+    var title: String
+    var entryNotes: String
+    var sortOrder: Int
+    var quantity: String
+    var category: String
+    var place: String
+    var dueDate: Date?
+    var section: StarterSetSectionModel?
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        entryNotes: String = "",
+        sortOrder: Int,
+        quantity: String = "",
+        category: String = "",
+        place: String = "",
+        dueDate: Date? = nil,
+        section: StarterSetSectionModel? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.entryNotes = entryNotes
+        self.sortOrder = sortOrder
+        self.quantity = quantity
+        self.category = category
+        self.place = place
+        self.dueDate = dueDate
+        self.section = section
+    }
+}
+
 extension ListDocument {
     static func fromDraft(_ draft: GeneratedListDraft) -> ListDocument {
         let document = ListDocument(
@@ -327,6 +435,56 @@ extension ListDocument {
 
 extension ListSectionModel {
     var sortedEntries: [ListEntry] {
+        entries.sorted { lhs, rhs in
+            if lhs.sortOrder == rhs.sortOrder {
+                return lhs.title < rhs.title
+            }
+            return lhs.sortOrder < rhs.sortOrder
+        }
+    }
+}
+
+extension StarterSetDocument {
+    func makeStaticListSet() -> StaticListSet {
+        StaticListSet(
+            id: id.uuidString,
+            title: title,
+            subtitle: subtitle,
+            kind: kind,
+            sections: sortedSections.map { section in
+                SectionDraft(
+                    id: section.id,
+                    title: section.title,
+                    entries: section.sortedEntries.map { entry in
+                        EntryDraft(
+                            id: entry.id,
+                            title: entry.title,
+                            notes: entry.entryNotes,
+                            metadata: EntryMetadataDraft(
+                                quantity: entry.quantity,
+                                category: entry.category,
+                                place: entry.place,
+                                dueDate: entry.dueDate
+                            )
+                        )
+                    }
+                )
+            }
+        )
+    }
+
+    var sortedSections: [StarterSetSectionModel] {
+        sections.sorted { lhs, rhs in
+            if lhs.sortOrder == rhs.sortOrder {
+                return lhs.title < rhs.title
+            }
+            return lhs.sortOrder < rhs.sortOrder
+        }
+    }
+}
+
+extension StarterSetSectionModel {
+    var sortedEntries: [StarterSetEntryModel] {
         entries.sorted { lhs, rhs in
             if lhs.sortOrder == rhs.sortOrder {
                 return lhs.title < rhs.title

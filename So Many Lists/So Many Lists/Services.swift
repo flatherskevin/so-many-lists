@@ -1,13 +1,29 @@
 import Foundation
+import FoundationModels
 import SwiftData
 
 enum ListGenerationError: Error, LocalizedError {
     case emptyPrompt
+    case modelUnavailable(SystemLanguageModel.Availability.UnavailableReason)
+    case invalidResponse
 
     var errorDescription: String? {
         switch self {
         case .emptyPrompt:
             "Add a prompt, voice note, or media context before generating a list."
+        case .modelUnavailable(let reason):
+            switch reason {
+            case .deviceNotEligible:
+                "Apple Intelligence is not available on this device."
+            case .appleIntelligenceNotEnabled:
+                "Apple Intelligence is turned off. Enable it in Settings to generate lists."
+            case .modelNotReady:
+                "Apple Intelligence is still preparing its on-device model. Try again in a bit."
+            @unknown default:
+                "Apple Intelligence is unavailable right now."
+            }
+        case .invalidResponse:
+            "Apple Intelligence returned an empty draft."
         }
     }
 }
@@ -15,6 +31,41 @@ enum ListGenerationError: Error, LocalizedError {
 protocol ListGenerationServicing {
     var providerLabel: String { get }
     func generate(request: ListGenerationRequest) async throws -> GeneratedListDraft
+}
+
+struct AppleIntelligenceAvailability: Equatable {
+    let isAvailable: Bool
+    let message: String?
+
+    static func current() -> AppleIntelligenceAvailability {
+        if #available(iOS 26.0, *) {
+            switch SystemLanguageModel.default.availability {
+            case .available:
+                return AppleIntelligenceAvailability(isAvailable: true, message: nil)
+            case .unavailable(let reason):
+                return AppleIntelligenceAvailability(
+                    isAvailable: false,
+                    message: ListGenerationError.modelUnavailable(reason).errorDescription
+                )
+            }
+        }
+
+        return AppleIntelligenceAvailability(
+            isAvailable: false,
+            message: "Apple Intelligence is not available in this environment."
+        )
+    }
+}
+
+struct PreferredListGenerationService: ListGenerationServicing {
+    let providerLabel = "Apple Intelligence"
+
+    func generate(request: ListGenerationRequest) async throws -> GeneratedListDraft {
+        if #available(iOS 26.0, *) {
+            return try await AppleIntelligenceListGenerationService().generate(request: request)
+        }
+        return try await HybridLocalListGenerationService().generate(request: request)
+    }
 }
 
 struct HybridLocalListGenerationService: ListGenerationServicing {
@@ -37,7 +88,8 @@ struct HybridLocalListGenerationService: ListGenerationServicing {
         return HeuristicDraftBuilder.buildDraft(
             kind: request.kind,
             prompt: basePrompt,
-            attachments: request.attachments
+            attachments: request.attachments,
+            starterSets: request.starterSets
         )
     }
 
@@ -50,19 +102,157 @@ struct HybridLocalListGenerationService: ListGenerationServicing {
     }
 }
 
+@available(iOS 26.0, *)
+@Generable(description: "A structured list draft with sections and concise items.")
+private struct FoundationModelListDraft {
+    let title: String
+    let summary: String
+    let sections: [FoundationModelSection]
+}
+
+@available(iOS 26.0, *)
+@Generable(description: "A single section in a generated list.")
+private struct FoundationModelSection {
+    let title: String
+    let entries: [FoundationModelEntry]
+}
+
+@available(iOS 26.0, *)
+@Generable(description: "A single checklist item with optional metadata.")
+private struct FoundationModelEntry {
+    let title: String
+    let notes: String?
+    let quantity: String?
+    let category: String?
+    let place: String?
+}
+
+struct AppleIntelligenceListGenerationService: ListGenerationServicing {
+    let providerLabel = "Apple Intelligence"
+
+    func generate(request: ListGenerationRequest) async throws -> GeneratedListDraft {
+        let normalizedPrompt = [
+            request.prompt.trimmingCharacters(in: .whitespacesAndNewlines),
+            request.voiceTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        ]
+        .filter { !$0.isEmpty }
+        .joined(separator: "\n")
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !normalizedPrompt.isEmpty || !request.attachments.isEmpty else {
+            throw ListGenerationError.emptyPrompt
+        }
+
+        let model = SystemLanguageModel.default
+        switch model.availability {
+        case .available:
+            break
+        case .unavailable(let reason):
+            throw ListGenerationError.modelUnavailable(reason)
+        }
+
+        let session = LanguageModelSession(model: model, instructions: instructions(for: request.kind))
+        let response = try await session.respond(generating: FoundationModelListDraft.self) {
+            """
+            Build a \(request.kind.title.lowercased()) list from this user intent:
+            \(normalizedPrompt)
+            """
+
+            if !request.attachments.isEmpty {
+                """
+                Attachment context:
+                \(request.attachments.map(\.summary).joined(separator: "\n"))
+                """
+            }
+
+            if !request.existingEntries.isEmpty {
+                """
+                Items already on the list. Do not repeat them:
+                \(request.existingEntries.joined(separator: "\n"))
+                """
+            }
+
+            if !request.starterSets.isEmpty {
+                """
+                Starter set items already included or expected. Do not repeat them:
+                \(request.starterSets.flatMap(\.sections).flatMap(\.entries).map(\.title).joined(separator: "\n"))
+                """
+            }
+        }
+
+        let sections: [SectionDraft] = response.content.sections.compactMap { section in
+            let entries: [EntryDraft] = section.entries.compactMap { entry in
+                let title = entry.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !title.isEmpty else { return nil }
+                return EntryDraft(
+                    title: title,
+                    notes: entry.notes ?? "",
+                    metadata: EntryMetadataDraft(
+                        quantity: entry.quantity ?? "",
+                        category: entry.category ?? "",
+                        place: entry.place ?? ""
+                    )
+                )
+            }
+            guard !entries.isEmpty else { return nil }
+            return SectionDraft(title: section.title, entries: entries)
+        }
+
+        guard !sections.isEmpty else {
+            throw ListGenerationError.invalidResponse
+        }
+
+        let draft = GeneratedListDraft(
+            title: response.content.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? request.kind.title : response.content.title,
+            kind: request.kind,
+            summary: response.content.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? HeuristicDraftBuilder.summaryPrefix(for: request.kind) : response.content.summary,
+            prompt: normalizedPrompt,
+            sections: sections
+        )
+
+        return StaticListSetService().merge(request.starterSets, into: draft)
+    }
+
+    private func instructions(for kind: ListKind) -> String {
+        switch kind {
+        case .general:
+            """
+            You create practical checklists. Return short section titles and concise action items. Avoid duplicates and avoid echoing the user prompt verbatim.
+            Never output raw narrative fragments, amenities, or clauses copied from the user's description. Convert context into useful checklist items.
+            """
+        case .grocery:
+            """
+            You create grocery lists organized by store-style sections like Produce, Pantry, Protein, Dairy, Frozen, and Household. Avoid duplicates and keep item titles short.
+            """
+        case .packing:
+            """
+            You create packing lists organized into sections like Essentials, Clothes, Toiletries, Tech, and Extras. Avoid duplicates, include likely necessities, and keep item titles short.
+            Only include real things a person would bring, wear, or buy for the trip. Do not include itinerary facts, lodging amenities, or sentence fragments from the prompt.
+            """
+        case .tripPlan:
+            """
+            You create trip plans organized into moments like Before You Go, Travel Day, and While You're There. Keep items actionable, concise, and non-duplicative.
+            Do not restate the user's narrative as items. Convert context into concrete actions or reservations instead of copying phrases.
+            """
+        }
+    }
+}
+
 enum HeuristicDraftBuilder {
-    static func buildDraft(kind: ListKind, prompt: String, attachments: [MediaAttachment]) -> GeneratedListDraft {
+    static func buildDraft(kind: ListKind, prompt: String, attachments: [MediaAttachment], starterSets: [StaticListSet] = []) -> GeneratedListDraft {
         let tokens = expandedItems(for: kind, prompt: prompt, attachments: attachments)
         let title = suggestedTitle(for: kind, prompt: prompt)
         let attachmentNote = attachments.isEmpty ? "" : " Based on \(attachments.count) attachment\(attachments.count == 1 ? "" : "s")."
 
-        return GeneratedListDraft(
+        let draft = GeneratedListDraft(
             title: title,
             kind: kind,
             summary: "\(summaryPrefix(for: kind))\(attachmentNote)",
             prompt: prompt,
             sections: sections(for: kind, tokens: tokens, attachments: attachments)
         )
+
+        return StaticListSetService().merge(starterSets, into: draft)
     }
 
     static func expandedItems(for kind: ListKind, prompt: String, attachments: [MediaAttachment]) -> [String] {
@@ -415,6 +605,254 @@ enum HeuristicDraftBuilder {
             guard seen.insert(key).inserted else { return nil }
             return prettify(trimmed)
         }
+    }
+}
+
+struct StaticListSetService {
+    func merge(_ sets: [StaticListSet], into draft: GeneratedListDraft) -> GeneratedListDraft {
+        guard !sets.isEmpty else { return draft }
+
+        var mergedDraft = draft
+        mergedDraft.sections = merged(draft.sections, with: sets.flatMap(\.sections))
+        return mergedDraft
+    }
+
+    func merge(_ additions: GeneratedListDraft, into draft: GeneratedListDraft) -> GeneratedListDraft {
+        var mergedDraft = draft
+        mergedDraft.sections = merged(draft.sections, with: additions.sections)
+        return mergedDraft
+    }
+
+    func apply(_ set: StaticListSet, to document: ListDocument) {
+        var draft = document.makeDraft(sourceKind: document.sourceKind)
+        draft = merge([set], into: draft)
+        applyDraft(draft, to: document)
+    }
+
+    func apply(_ addition: GeneratedListDraft, to document: ListDocument) {
+        var draft = document.makeDraft(sourceKind: document.sourceKind)
+        draft = merge(addition, into: draft)
+        if !addition.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            draft.prompt = addition.prompt
+        }
+        document.sections = draft.sections.enumerated().map { sectionIndex, sectionDraft in
+            let existingSection = document.sections.first {
+                $0.title.localizedCaseInsensitiveCompare(sectionDraft.title) == .orderedSame
+            }
+            let section = existingSection ?? ListSectionModel(
+                id: sectionDraft.id,
+                title: sectionDraft.title,
+                sortOrder: sectionIndex,
+                list: document
+            )
+            section.title = sectionDraft.title
+            section.sortOrder = sectionIndex
+
+            section.entries = sectionDraft.entries.enumerated().map { entryIndex, entryDraft in
+                let existingEntry = section.entries.first {
+                    normalizedKey(for: $0.title) == normalizedKey(for: entryDraft.title)
+                }
+                let entry = existingEntry ?? ListEntry(
+                    id: entryDraft.id,
+                    title: entryDraft.title,
+                    sortOrder: entryIndex,
+                    section: section
+                )
+                entry.title = entryDraft.title
+                entry.entryNotes = entryDraft.notes
+                entry.isComplete = entryDraft.isComplete
+                entry.sortOrder = entryIndex
+                entry.quantity = entryDraft.metadata.quantity
+                entry.category = entryDraft.metadata.category
+                entry.place = entryDraft.metadata.place
+                entry.dueDate = entryDraft.metadata.dueDate
+                entry.section = section
+                return entry
+            }
+            return section
+        }
+        document.listSummary = draft.summary
+        document.sourcePrompt = draft.prompt
+        document.touch()
+    }
+
+    func apply(_ addition: GeneratedListDraft, to starterSet: StarterSetDocument) {
+        let existingSections = starterSet.sortedSections.map { section in
+            SectionDraft(
+                id: section.id,
+                title: section.title,
+                entries: section.sortedEntries.map { entry in
+                    EntryDraft(
+                        id: entry.id,
+                        title: entry.title,
+                        notes: entry.entryNotes,
+                        metadata: EntryMetadataDraft(
+                            quantity: entry.quantity,
+                            category: entry.category,
+                            place: entry.place,
+                            dueDate: entry.dueDate
+                        )
+                    )
+                }
+            )
+        }
+        let mergedDraft = merged(existingSections, with: addition.sections)
+
+        starterSet.sections = mergedDraft.enumerated().map { sectionIndex, sectionDraft in
+            let existingSection = starterSet.sections.first {
+                $0.title.localizedCaseInsensitiveCompare(sectionDraft.title) == .orderedSame
+            }
+            let section = existingSection ?? StarterSetSectionModel(
+                id: sectionDraft.id,
+                title: sectionDraft.title,
+                sortOrder: sectionIndex,
+                starterSet: starterSet
+            )
+            section.title = sectionDraft.title
+            section.sortOrder = sectionIndex
+
+            section.entries = sectionDraft.entries.enumerated().map { entryIndex, entryDraft in
+                let existingEntry = section.entries.first {
+                    normalizedKey(for: $0.title) == normalizedKey(for: entryDraft.title)
+                }
+                let entry = existingEntry ?? StarterSetEntryModel(
+                    id: entryDraft.id,
+                    title: entryDraft.title,
+                    sortOrder: entryIndex,
+                    section: section
+                )
+                entry.title = entryDraft.title
+                entry.entryNotes = entryDraft.notes
+                entry.sortOrder = entryIndex
+                entry.quantity = entryDraft.metadata.quantity
+                entry.category = entryDraft.metadata.category
+                entry.place = entryDraft.metadata.place
+                entry.dueDate = entryDraft.metadata.dueDate
+                entry.section = section
+                return entry
+            }
+            return section
+        }
+
+        if !addition.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, starterSet.title.hasPrefix("New ") {
+            starterSet.title = addition.title
+        }
+        if !addition.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            starterSet.subtitle = addition.summary
+        }
+        starterSet.touch()
+    }
+
+    private func applyDraft(_ draft: GeneratedListDraft, to document: ListDocument) {
+        document.sections = draft.sections.enumerated().map { sectionIndex, sectionDraft in
+            let existingSection = document.sections.first {
+                $0.title.localizedCaseInsensitiveCompare(sectionDraft.title) == .orderedSame
+            }
+            let section = existingSection ?? ListSectionModel(
+                id: sectionDraft.id,
+                title: sectionDraft.title,
+                sortOrder: sectionIndex,
+                list: document
+            )
+            section.title = sectionDraft.title
+            section.sortOrder = sectionIndex
+
+            section.entries = sectionDraft.entries.enumerated().map { entryIndex, entryDraft in
+                let existingEntry = section.entries.first {
+                    normalizedKey(for: $0.title) == normalizedKey(for: entryDraft.title)
+                }
+                let entry = existingEntry ?? ListEntry(
+                    id: entryDraft.id,
+                    title: entryDraft.title,
+                    sortOrder: entryIndex,
+                    section: section
+                )
+                entry.title = entryDraft.title
+                entry.entryNotes = entryDraft.notes
+                entry.isComplete = entryDraft.isComplete
+                entry.sortOrder = entryIndex
+                entry.quantity = entryDraft.metadata.quantity
+                entry.category = entryDraft.metadata.category
+                entry.place = entryDraft.metadata.place
+                entry.dueDate = entryDraft.metadata.dueDate
+                entry.section = section
+                return entry
+            }
+            return section
+        }
+        document.touch()
+    }
+
+    private func merged(_ base: [SectionDraft], with additions: [SectionDraft]) -> [SectionDraft] {
+        var sections = base
+        var seenKeys = Set(sections.flatMap(\.entries).map { normalizedKey(for: $0.title) })
+
+        for addedSection in additions {
+            let targetIndex = sections.firstIndex {
+                $0.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .localizedCaseInsensitiveCompare(addedSection.title.trimmingCharacters(in: .whitespacesAndNewlines)) == .orderedSame
+            }
+
+            var newEntries: [EntryDraft] = []
+            for entry in addedSection.entries {
+                let key = normalizedKey(for: entry.title)
+                guard !key.isEmpty, seenKeys.insert(key).inserted else { continue }
+                newEntries.append(entry)
+            }
+
+            guard !newEntries.isEmpty else { continue }
+
+            if let targetIndex {
+                sections[targetIndex].entries.append(contentsOf: newEntries)
+            } else {
+                sections.append(SectionDraft(title: addedSection.title, entries: newEntries))
+            }
+        }
+
+        return sections.map { section in
+            SectionDraft(
+                id: section.id,
+                title: section.title,
+                entries: section.entries.enumerated().map { entryIndex, entry in
+                    var updatedEntry = entry
+                    if updatedEntry.metadata.category.isEmpty {
+                        updatedEntry.metadata = HeuristicDraftBuilder.metadata(
+                            for: updatedEntry.title,
+                            fallbackCategory: section.title,
+                            index: entryIndex
+                        )
+                    }
+                    return updatedEntry
+                }
+            )
+        }
+    }
+
+    func normalizedKey(for value: String) -> String {
+        let normalized = value
+            .lowercased()
+            .replacingOccurrences(of: "&", with: "and")
+            .replacingOccurrences(of: "flipflops", with: "flip flops")
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .map(singularize)
+            .joined(separator: " ")
+
+        return normalized.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func singularize(_ word: String) -> String {
+        guard word.count > 3 else { return word }
+        if word.hasSuffix("ies") {
+            return String(word.dropLast(3)) + "y"
+        }
+        if word.hasSuffix("sses") || word.hasSuffix("ss") {
+            return word
+        }
+        if word.hasSuffix("s") {
+            return String(word.dropLast())
+        }
+        return word
     }
 }
 

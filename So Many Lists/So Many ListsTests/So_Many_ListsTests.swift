@@ -102,4 +102,91 @@ final class So_Many_ListsTests: XCTestCase {
         XCTAssertTrue(items.contains("Eggs"))
     }
 
+    func testStarterSetMergeAvoidsDuplicatePackingItems() {
+        let essentials = StaticListSet(
+            id: "packing-trip-essentials",
+            title: "Trip Essentials",
+            subtitle: "Core travel items you almost always need.",
+            kind: .packing,
+            sections: [
+                SectionDraft(title: "Clothes", entries: [
+                    EntryDraft(title: "Socks"),
+                    EntryDraft(title: "Underwear")
+                ]),
+                SectionDraft(title: "Toiletries", entries: [
+                    EntryDraft(title: "Toothbrush")
+                ]),
+                SectionDraft(title: "Tech", entries: [
+                    EntryDraft(title: "Phone charger")
+                ])
+            ]
+        )
+
+        let draft = HeuristicDraftBuilder.buildDraft(
+            kind: .packing,
+            prompt: "weekend trip with phone charger, socks, toothbrush",
+            attachments: [],
+            starterSets: [essentials]
+        )
+
+        let items = draft.sections.flatMap(\.entries).map(\.title)
+        XCTAssertEqual(items.filter { $0 == "Phone Charger" }.count, 1)
+        XCTAssertEqual(items.filter { $0 == "Socks" }.count, 1)
+        XCTAssertEqual(items.filter { $0 == "Toothbrush" }.count, 1)
+        XCTAssertTrue(items.contains("Underwear"))
+    }
+
+    func testApplyingStarterSetToDocumentOnlyAddsMissingItems() throws {
+        let container = try ModelContainer(
+            for: ListDocument.self,
+            ListSectionModel.self,
+            ListEntry.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let context = ModelContext(container)
+        let document = ListDocument.fromDraft(
+            GeneratedListDraft(
+                title: "Packing",
+                kind: .packing,
+                summary: "Test",
+                prompt: "",
+                sections: [
+                    SectionDraft(title: "Clothes", entries: [
+                        EntryDraft(title: "Socks")
+                    ]),
+                    SectionDraft(title: "Tech", entries: [
+                        EntryDraft(title: "Phone charger")
+                    ])
+                ]
+            )
+        )
+        context.insert(document)
+
+        let essentials = StaticListSet(
+            id: "packing-trip-essentials",
+            title: "Trip Essentials",
+            subtitle: "Core travel items you almost always need.",
+            kind: .packing,
+            sections: [
+                SectionDraft(title: "Essentials", entries: [
+                    EntryDraft(title: "Contacts")
+                ]),
+                SectionDraft(title: "Clothes", entries: [
+                    EntryDraft(title: "Socks"),
+                    EntryDraft(title: "Underwear")
+                ]),
+                SectionDraft(title: "Tech", entries: [
+                    EntryDraft(title: "Phone charger")
+                ])
+            ]
+        )
+        StaticListSetService().apply(essentials, to: document)
+
+        let items = document.sortedSections.flatMap(\.sortedEntries).map(\.title)
+        XCTAssertEqual(items.filter { $0 == "Socks" }.count, 1)
+        XCTAssertEqual(items.filter { $0 == "Phone charger" }.count, 1)
+        XCTAssertTrue(items.contains("Underwear"))
+        XCTAssertTrue(items.contains("Contacts"))
+    }
+
 }

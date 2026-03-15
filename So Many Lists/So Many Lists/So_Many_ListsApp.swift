@@ -17,6 +17,9 @@ struct So_Many_ListsApp: App {
             ListDocument.self,
             ListSectionModel.self,
             ListEntry.self,
+            StarterSetDocument.self,
+            StarterSetSectionModel.self,
+            StarterSetEntryModel.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

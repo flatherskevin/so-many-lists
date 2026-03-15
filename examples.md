@@ -1,0 +1,2 @@
+
+I am going on a trip to aruba. I will be there for 5 days. We will be staying at an AirBnB with a private pool and a grill. We plan on cooking most meals at home with a single date night on the beach at sunset. I want to snorkel a bunch and have my own gear. Most of our time will be spent on the beach, but we will also be dancing at Moomba beach club each evening. The four of us all got goodr sunglasses as a fun momento to bring on the trip.

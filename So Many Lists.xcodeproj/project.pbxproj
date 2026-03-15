@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4B66FDC32F64215B00D4D2E2 /* Untitled.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B66FDC22F64215700D4D2E2 /* Untitled.swift */; };
+		4B7CAF042F66C43E00DCB7F8 /* examples.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF012F66C43E00DCB7F8 /* examples.md */; };
+		4B7CAF052F66C43E00DCB7F8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF022F66C43E00DCB7F8 /* LICENSE */; };
+		4B7CAF062F66C43E00DCB7F8 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF032F66C43E00DCB7F8 /* README.md */; };
+		4B7CAF072F66C43E00DCB7F8 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF002F66C43E00DCB7F8 /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,7 +32,10 @@
 
 /* Begin PBXFileReference section */
 		4B66FD452F62D8A400D4D2E2 /* So Many Lists.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "So Many Lists.xcodeproj"; sourceTree = "<group>"; };
-		4B66FDC22F64215700D4D2E2 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
+		4B7CAF002F66C43E00DCB7F8 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		4B7CAF012F66C43E00DCB7F8 /* examples.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = examples.md; sourceTree = "<group>"; };
+		4B7CAF022F66C43E00DCB7F8 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		4B7CAF032F66C43E00DCB7F8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4BAD9B1A2F62D7BA0008EAC9 /* So Many Lists.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "So Many Lists.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BAD9B292F62D7BC0008EAC9 /* So Many ListsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "So Many ListsTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BAD9B332F62D7BC0008EAC9 /* So Many ListsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "So Many ListsUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,7 +98,10 @@
 				4BAD9B2C2F62D7BC0008EAC9 /* So Many Lists/So Many ListsTests */,
 				4BAD9B362F62D7BC0008EAC9 /* So Many Lists/So Many ListsUITests */,
 				4BAD9B1B2F62D7BA0008EAC9 /* Products */,
-				4B66FDC22F64215700D4D2E2 /* Untitled.swift */,
+				4B7CAF002F66C43E00DCB7F8 /* .gitignore */,
+				4B7CAF012F66C43E00DCB7F8 /* examples.md */,
+				4B7CAF022F66C43E00DCB7F8 /* LICENSE */,
+				4B7CAF032F66C43E00DCB7F8 /* README.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -232,6 +241,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B7CAF042F66C43E00DCB7F8 /* examples.md in Resources */,
+				4B7CAF052F66C43E00DCB7F8 /* LICENSE in Resources */,
+				4B7CAF062F66C43E00DCB7F8 /* README.md in Resources */,
+				4B7CAF072F66C43E00DCB7F8 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -256,7 +269,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4B66FDC32F64215B00D4D2E2 /* Untitled.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
