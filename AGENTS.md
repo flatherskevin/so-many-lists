@@ -1,10 +1,15 @@
 # AGENTS.md
 
-## Project Standards
+## Documentation Index
 
-- Use Apple Intelligence or other real model-backed generation for AI list creation features. Do not replace AI generation with hardcoded item libraries, keyword-to-item maps, canned packing lists, or other fake content generation shortcuts.
-- If AI is unavailable in the current environment, fail clearly or use an explicitly labeled fallback path. Do not pretend a heuristic or hardcoded response is AI output.
-- Keep list-editing and starter-set-editing flows modular and DRY. Shared behaviors like media intake, voice capture, and intelligence application should be implemented as reusable components.
-- Treat starter sets as first-class user data, not app-shipped presets.
-- Avoid duplicate list items by normalizing and merging generated content before insertion.
-- Prefer precise, minimal UI flows over parallel create/edit screens when the same editor can serve both.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/LEARNINGS.md](docs/LEARNINGS.md)
+- [docs/PRODUCT_REQUIREMENTS.md](docs/PRODUCT_REQUIREMENTS.md)
+- [docs/TECHNICAL_REQUIREMENTS.md](docs/TECHNICAL_REQUIREMENTS.md)
+
+## Agent Guidance
+
+- Use the documentation in `docs/` as the source of truth for architecture, product expectations, technical constraints, and repo-derived learnings.
+- When proposing or implementing changes, preserve the distinction between current implementation and normative requirements if the docs call out a gap.
+- Keep the files in `docs/` up to date as the codebase grows. When a change affects architecture, product behavior, technical constraints, or repo learnings, update the relevant document as part of the same work.
+- Keep `AGENTS.md` lightweight. Add enduring project policy to the appropriate file under `docs/` instead of expanding this file.

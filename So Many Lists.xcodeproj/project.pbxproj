@@ -11,6 +11,11 @@
 		4B7CAF052F66C43E00DCB7F8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF022F66C43E00DCB7F8 /* LICENSE */; };
 		4B7CAF062F66C43E00DCB7F8 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF032F66C43E00DCB7F8 /* README.md */; };
 		4B7CAF072F66C43E00DCB7F8 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF002F66C43E00DCB7F8 /* .gitignore */; };
+		4B7CAF0D2F66DD2000DCB7F8 /* LEARNINGS.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF092F66DD2000DCB7F8 /* LEARNINGS.md */; };
+		4B7CAF0E2F66DD2000DCB7F8 /* PRODUCT_REQUIREMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF0A2F66DD2000DCB7F8 /* PRODUCT_REQUIREMENTS.md */; };
+		4B7CAF0F2F66DD2000DCB7F8 /* TECHNICAL_REQUIREMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF0B2F66DD2000DCB7F8 /* TECHNICAL_REQUIREMENTS.md */; };
+		4B7CAF102F66DD2000DCB7F8 /* ARCHITECTURE.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF082F66DD2000DCB7F8 /* ARCHITECTURE.md */; };
+		4B7CAF122F66DD3600DCB7F8 /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B7CAF112F66DD3600DCB7F8 /* AGENTS.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +41,11 @@
 		4B7CAF012F66C43E00DCB7F8 /* examples.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = examples.md; sourceTree = "<group>"; };
 		4B7CAF022F66C43E00DCB7F8 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		4B7CAF032F66C43E00DCB7F8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		4B7CAF082F66DD2000DCB7F8 /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ARCHITECTURE.md; sourceTree = "<group>"; };
+		4B7CAF092F66DD2000DCB7F8 /* LEARNINGS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LEARNINGS.md; sourceTree = "<group>"; };
+		4B7CAF0A2F66DD2000DCB7F8 /* PRODUCT_REQUIREMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRODUCT_REQUIREMENTS.md; sourceTree = "<group>"; };
+		4B7CAF0B2F66DD2000DCB7F8 /* TECHNICAL_REQUIREMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TECHNICAL_REQUIREMENTS.md; sourceTree = "<group>"; };
+		4B7CAF112F66DD3600DCB7F8 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 		4BAD9B1A2F62D7BA0008EAC9 /* So Many Lists.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "So Many Lists.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BAD9B292F62D7BC0008EAC9 /* So Many ListsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "So Many ListsTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BAD9B332F62D7BC0008EAC9 /* So Many ListsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "So Many ListsUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -91,6 +101,17 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4B7CAF0C2F66DD2000DCB7F8 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				4B7CAF082F66DD2000DCB7F8 /* ARCHITECTURE.md */,
+				4B7CAF092F66DD2000DCB7F8 /* LEARNINGS.md */,
+				4B7CAF0A2F66DD2000DCB7F8 /* PRODUCT_REQUIREMENTS.md */,
+				4B7CAF0B2F66DD2000DCB7F8 /* TECHNICAL_REQUIREMENTS.md */,
+			);
+			path = docs;
+			sourceTree = "<group>";
+		};
 		4BAD9B112F62D7BA0008EAC9 = {
 			isa = PBXGroup;
 			children = (
@@ -100,8 +121,10 @@
 				4BAD9B1B2F62D7BA0008EAC9 /* Products */,
 				4B7CAF002F66C43E00DCB7F8 /* .gitignore */,
 				4B7CAF012F66C43E00DCB7F8 /* examples.md */,
+				4B7CAF0C2F66DD2000DCB7F8 /* docs */,
 				4B7CAF022F66C43E00DCB7F8 /* LICENSE */,
 				4B7CAF032F66C43E00DCB7F8 /* README.md */,
+				4B7CAF112F66DD3600DCB7F8 /* AGENTS.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -241,9 +264,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B7CAF0D2F66DD2000DCB7F8 /* LEARNINGS.md in Resources */,
+				4B7CAF0E2F66DD2000DCB7F8 /* PRODUCT_REQUIREMENTS.md in Resources */,
+				4B7CAF0F2F66DD2000DCB7F8 /* TECHNICAL_REQUIREMENTS.md in Resources */,
+				4B7CAF102F66DD2000DCB7F8 /* ARCHITECTURE.md in Resources */,
 				4B7CAF042F66C43E00DCB7F8 /* examples.md in Resources */,
 				4B7CAF052F66C43E00DCB7F8 /* LICENSE in Resources */,
 				4B7CAF062F66C43E00DCB7F8 /* README.md in Resources */,
+				4B7CAF122F66DD3600DCB7F8 /* AGENTS.md in Resources */,
 				4B7CAF072F66C43E00DCB7F8 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
